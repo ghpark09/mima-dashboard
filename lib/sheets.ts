@@ -241,9 +241,11 @@ function mapNaverBrand(rows: RawRow[]): AdRow[] {
     if (!Number.isFinite(days) || days <= 0) continue;
     const daily = net / days;
     const campaign = (g("계약 이름") || "브랜드검색").trim();
+    const todayISO = new Date().toISOString().slice(0, 10);
     for (let i = 0; i < days; i++) {
       const iso = new Date(startMs + i * 86400000).toISOString().slice(0, 10);
-      if (iso < "2026-01-01") continue; // 2026년 집행분만 반영
+      // 2026년 집행분 + 오늘 이전(완료된 날)만 반영 (오늘/미래 미완성일 제외)
+      if (iso < "2026-01-01" || iso >= todayISO) continue;
       out.push({
         media: "naver",
         date: iso,
