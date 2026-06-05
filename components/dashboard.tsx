@@ -27,10 +27,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => setMounted(true), []);
 
-  const gen = new Date(data.generatedAt);
-  const genStr = `${gen.getFullYear()}.${String(gen.getMonth() + 1).padStart(2, "0")}.${String(
-    gen.getDate()
-  ).padStart(2, "0")} ${String(gen.getHours()).padStart(2, "0")}:${String(gen.getMinutes()).padStart(2, "0")}`;
+  // KST(UTC+9)로 고정 포맷 — 서버(UTC)/브라우저(KST) 시간대 차이로 인한 하이드레이션 불일치 방지
+  const gen = new Date(new Date(data.generatedAt).getTime() + 9 * 3600 * 1000);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const genStr = `${gen.getUTCFullYear()}.${p2(gen.getUTCMonth() + 1)}.${p2(gen.getUTCDate())} ${p2(gen.getUTCHours())}:${p2(gen.getUTCMinutes())}`;
 
   return (
     <div className="min-h-screen bg-slate-50">
