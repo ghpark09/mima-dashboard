@@ -42,8 +42,8 @@ async function fetchCsv(url: string): Promise<string> {
   // 운영 전환 시 이 함수만 서비스계정(googleapis Sheets API)으로 교체하면 됨.
   const res = await fetch(url, {
     redirect: "follow",
-    // 매일 1회 갱신 컨셉이므로 1시간 캐시 (cron/revalidate로 보강)
-    next: { revalidate: 3600 },
+    // 매일 1회 갱신 + 'sheets' 태그로 수기 새로고침 시 강제 재요청
+    next: { revalidate: 3600, tags: ["sheets"] },
     headers: { "User-Agent": "Mozilla/5.0 MimaDashboard" },
   });
   if (!res.ok) throw new Error(`fetch ${url} → ${res.status}`);
@@ -220,17 +220,64 @@ function mapMeta(media: MediaKey, rows: RawRow[]): AdRow[] {
     .filter((x): x is AdRow => x !== null);
 }
 
+// 네이버 브랜드검색 (정액 계약제) — RAW_NAVER_BRAND
+// 계약비를 계약기간 일수로 나눠 일별 비용으로 배분. 비용만 추가(노출/클릭은 RAW_NAVER에 이미 존재 → 중복 방지)
+function mapNaverBrand(rows: RawRow[]): AdRow[] {
+  const out: AdRow[] = [];
+  for (const row of rows) {
+    const g = makeGetter(row);
+    const status = (g("계약 상태") || "").trim();
+    if (status !== "집행 중" && status !== "종료") continue; // 집행대기·집행전취소 제외
+    const period = g("계약 기간") || "";
+    const m = period.match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2}).*?[~\-](\s*)(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+    if (!m) continue;
+    const start = `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+    const end = `${m[5]}-${m[6].padStart(2, "0")}-${m[7].padStart(2, "0")}`;
+    const net = num(g("계약 광고비")) - num(g("환급액"));
+    if (net <= 0) continue;
+    const startMs = Date.parse(start + "T00:00:00Z");
+    const endMs = Date.parse(end + "T00:00:00Z");
+    const days = Math.round((endMs - startMs) / 86400000) + 1;
+    if (!Number.isFinite(days) || days <= 0) continue;
+    const daily = net / days;
+    const campaign = (g("계약 이름") || "브랜드검색").trim();
+    for (let i = 0; i < days; i++) {
+      const iso = new Date(startMs + i * 86400000).toISOString().slice(0, 10);
+      if (iso < "2026-01-01") continue; // 2026년 집행분만 반영
+      out.push({
+        media: "naver",
+        date: iso,
+        campaign,
+        exec: "상시·라이브",
+        channelType: "검색광고",
+        classification: "브랜드검색/신제품검색",
+        subMedia: "브랜드검색/신제품검색",
+        spend: daily,
+        impressions: 0,
+        clicks: 0,
+        reach: 0,
+        purchases: 0,
+        convRevenue: 0,
+        hasRevenue: true,
+      });
+    }
+  }
+  return out;
+}
+
 export async function fetchAdRows(): Promise<AdRow[]> {
-  const [kakao, naver, mima, metaNaver] = await Promise.all([
+  const [kakao, naver, mima, metaNaver, naverBrand] = await Promise.all([
     fetchAdSheet("RAW_KAKAO"),
     fetchAdSheet("RAW_NAVER"),
     fetchAdSheet("RAW_META_MIMA"),
     fetchAdSheet("RAW_META_NAVER"),
+    fetchAdSheet("RAW_NAVER_BRAND"),
   ]);
   return [
     ...mapKakao(kakao),
     ...mapNaver(naver),
     ...mapMeta("meta_mima", mima),
     ...mapMeta("meta_naver", metaNaver),
+    ...mapNaverBrand(naverBrand),
   ];
 }

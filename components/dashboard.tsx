@@ -10,6 +10,7 @@ import { SalesChannelTab } from "./tabs/sales-channel";
 import { TrendTab } from "./tabs/trend";
 import { MonthlyMediaTab } from "./tabs/monthly-media";
 import { CampaignTab } from "./tabs/campaign";
+import { RefreshButton } from "./refresh-button";
 
 const TABS = [
   "종합 요약",
@@ -45,12 +46,15 @@ export function Dashboard({ data }: { data: DashboardData }) {
               <p className="text-xs text-slate-500">광고비 · 매출 통합 대시보드</p>
             </div>
           </div>
-          <div className="text-right text-xs text-slate-500">
-            <div className="flex items-center justify-end gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100" />
-              매일 오전 10시 갱신
+          <div className="flex items-center gap-3">
+            <div className="text-right text-xs text-slate-500">
+              <div className="flex items-center justify-end gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100" />
+                매일 오전 10시 갱신
+              </div>
+              <div className="mt-0.5">최종 갱신 {genStr}</div>
             </div>
-            <div className="mt-0.5">최종 갱신 {genStr}</div>
+            <RefreshButton />
           </div>
         </div>
       </header>

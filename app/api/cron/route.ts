@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest } from "next/server";
 
 // Vercel Cron이 매일 01:00 UTC(= 10:00 KST)에 호출 → 데이터 캐시를 갱신
@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
     return new Response("Unauthorized", { status: 401 });
   }
+  revalidateTag("sheets");
   revalidatePath("/");
   return Response.json({ revalidated: true, at: new Date().toISOString() });
 }
