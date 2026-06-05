@@ -88,7 +88,12 @@ function aggregateChannel(rows: SalesRow[], keyOf: (r: SalesRow) => string): Cha
 
 // ── 메인 조립 ───────────────────────────────────────────────────────
 
-export function assembleDashboard(salesRows: SalesRow[], adRows: AdRow[]): DashboardData {
+export function assembleDashboard(salesRowsAll: SalesRow[], adRowsAll: AdRow[]): DashboardData {
+  // 오늘(KST)은 아직 미완성일 → 자정 전까지는 D-1까지만 집계 (오늘/미래 데이터 제외)
+  const todayKST = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  const salesRows = salesRowsAll.filter((r) => r.date < todayKST);
+  const adRows = adRowsAll.filter((r) => r.date < todayKST);
+
   // 날짜 범위
   const salesDates = salesRows.map((r) => r.date).sort();
   const adDates = adRows.map((r) => r.date).sort();
