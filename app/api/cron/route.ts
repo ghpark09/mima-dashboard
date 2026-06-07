@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest } from "next/server";
+import { logEvent } from "@/lib/log";
 
 // Vercel Cron이 매일 01:00 UTC(= 10:00 KST)에 호출 → 데이터 캐시를 갱신
 export const dynamic = "force-dynamic";
@@ -12,5 +13,6 @@ export async function GET(req: NextRequest) {
   }
   revalidateTag("sheets");
   revalidatePath("/");
+  await logEvent("자동 갱신(10시)");
   return Response.json({ revalidated: true, at: new Date().toISOString() });
 }
