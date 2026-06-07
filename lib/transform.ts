@@ -377,6 +377,7 @@ export function assembleDashboard(salesRowsAll: SalesRow[], adRowsAll: AdRow[]):
 
   return {
     generatedAt: new Date().toISOString(),
+    today: todayKST,
     range: {
       salesMin: salesDates[0] || "",
       salesMax: salesDates[salesDates.length - 1] || "",

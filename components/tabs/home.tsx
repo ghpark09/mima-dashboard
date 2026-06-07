@@ -59,6 +59,16 @@ export function HomeTab({ data }: { data: DashboardData }) {
     { label: "평균 CPC", value: won(per(cSpend, cClick)), d: deltaPct(per(cSpend, cClick), per(pSpend, pClick)), key: "CPC", color: "blue", goodUp: false },
   ];
 
+  // 데이터 신선도 — 최신 데이터일이 진짜 어제(D-1)인지 판정
+  const expectedYesterday = new Date(Date.parse(data.today + "T00:00:00Z") - 86400000)
+    .toISOString()
+    .slice(0, 10);
+  const isFresh = latestDay?.date === expectedYesterday;
+  const lagDays = latestDay
+    ? Math.round((Date.parse(data.today + "T00:00:00Z") - Date.parse(latestDay.date + "T00:00:00Z")) / 86400000)
+    : 0;
+  const perfLabel = isFresh ? "어제 성과" : "최근 매출 성과";
+
   // 어제 성과 (ROAS = 판매금액 ÷ 광고비)
   const yRoas = latestDay && latestDay.totalSpend > 0 ? ratio(latestDay.grossRevenue, latestDay.totalSpend) : null;
   const pRoas = prevDay && prevDay.totalSpend > 0 ? ratio(prevDay.grossRevenue, prevDay.totalSpend) : null;
@@ -78,9 +88,15 @@ export function HomeTab({ data }: { data: DashboardData }) {
       {/* ── 어제 성과 (최상단, 한눈에) ── */}
       <section>
         <Flex className="mb-3">
-          <Title className="text-xl">⚡ 어제 성과 <span className="text-base font-normal text-slate-400">({latestDay?.date})</span></Title>
+          <Title className="text-xl">⚡ {perfLabel} <span className="text-base font-normal text-slate-400">({latestDay?.date})</span></Title>
           <Badge color="slate">전일 대비</Badge>
         </Flex>
+        {!isFresh && latestDay && (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+            ⚠️ 최신 데이터가 <b>{latestDay.date}</b> 기준입니다 (오늘 {data.today} · <b>{lagDays}일 전</b>).
+            주말이거나 담당자 RAW 업로드가 아직 안 된 상태일 수 있어요. 업로드 후 우측 상단 <b>새로고침</b>을 누르면 즉시 반영됩니다.
+          </div>
+        )}
         <Grid numItemsSm={2} numItemsLg={4} className="gap-4">
           {yKpis.map((k) => {
             const up = k.d != null && k.d >= 0;
@@ -100,7 +116,7 @@ export function HomeTab({ data }: { data: DashboardData }) {
         </Grid>
         <Card className="mt-4 ring-1 ring-slate-200">
           <Flex>
-            <Title>어제 채널별 판매금액</Title>
+            <Title>{isFresh ? "어제" : "최근"} 채널별 판매금액</Title>
             <Text>{latestDay?.date}</Text>
           </Flex>
           {yChannel.length ? (

@@ -173,6 +173,7 @@ export interface DayCampaignAgg {
 
 export interface DashboardData {
   generatedAt: string;
+  today: string; // 집계 기준 오늘(KST). 어제(D-1) 판정용
   range: {
     salesMin: string;
     salesMax: string;
