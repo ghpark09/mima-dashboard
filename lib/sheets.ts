@@ -196,10 +196,14 @@ function mapMeta(media: MediaKey, rows: RawRow[]): AdRow[] {
       const date = toISO(g("보고 시작", "보고시작"));
       if (!date) return null;
       const campaign = g("캠페인 이름") || "(미상)";
-      const roas = num(g("구매 ROAS", "구매roas"));
       const spend = num(g("지출 금액", "지출금액"));
+      // 양식 변경(2026-06): RAW_META_NAVER는 '구매' 컬럼이 '공유항목이 포함된 구매'로 바뀜.
+      // (주의: g("구매")는 '구매 ROAS(...)'를 부분일치로 잘못 집으므로 명시적 헤더 사용)
+      const purchases = num(g("공유항목이 포함된 구매", "공유 항목이 포함된 구매"));
+      // '구매 ROAS(광고 지출 대비 수익률)' = 배수(예: 2.5) → 전환매출 = ROAS × 지출 (매체 보고 기준, 참고용)
+      const roas = num(g("구매 ROAS", "구매roas"));
       const hasRev = media === "meta_naver";
-      const convRevenue = hasRev && roas > 0 ? (roas / 100) * spend : 0;
+      const convRevenue = hasRev && roas > 0 ? roas * spend : 0;
       return {
         media,
         date,
@@ -212,7 +216,7 @@ function mapMeta(media: MediaKey, rows: RawRow[]): AdRow[] {
         impressions: num(g("노출")),
         clicks: num(g("링크 클릭", "고유 링크 클릭", "링크클릭")),
         reach: num(g("도달")),
-        purchases: num(g("구매")),
+        purchases,
         convRevenue,
         hasRevenue: hasRev,
       };
