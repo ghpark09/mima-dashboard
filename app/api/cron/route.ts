@@ -12,5 +12,19 @@ export async function GET(req: NextRequest) {
   }
   revalidateTag("sheets");
   revalidatePath("/");
-  return Response.json({ revalidated: true, at: new Date().toISOString() });
+
+  // 캐시 무효화 후 홈을 즉시 한 번 호출해 재생성 → '최종 갱신' 시각이 10시로 찍히고
+  // 방문자가 없어도 데이터가 미리 준비됨 (자동갱신이 눈에 보이도록)
+  const base = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://mima-dashboard.vercel.app";
+  let warmed = false;
+  try {
+    const res = await fetch(`${base}/`, { cache: "no-store" });
+    warmed = res.ok;
+  } catch {
+    /* 워밍 실패해도 캐시 무효화는 이미 적용됨 */
+  }
+
+  return Response.json({ revalidated: true, warmed, at: new Date().toISOString() });
 }
