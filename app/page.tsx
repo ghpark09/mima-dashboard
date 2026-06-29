@@ -1,8 +1,9 @@
 import { getDashboardData } from "@/lib/data";
 import { Dashboard } from "@/components/dashboard";
 
-// 매일 갱신 컨셉: 1시간마다 재검증 (cron으로 보강 가능)
-export const revalidate = 3600;
+// 사용 중단: 자동 재검증 끔(정적). 데이터는 빌드 시점 1회만 가져옴.
+// (수기 새로고침 버튼을 누를 때만 갱신됨)
+export const revalidate = false;
 
 export default async function Page() {
   let data;
